@@ -18,13 +18,11 @@ public class DetectWalls : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         cam = GetComponentInChildren<Camera>();
-        disableCursor();
         ui = gameObject.GetComponent<UI>();
     }
 	
 	// Update is called once per frame
 	void Update () {
-
        
         if (!inUIState)
         {
@@ -47,8 +45,9 @@ public class DetectWalls : MonoBehaviour {
                     if (hit.transform.tag != "Wall")
                            return;
 
-                    //Enable UI                
-                    enableUI(hit.collider.gameObject);
+                    //Enable UI     
+                    inUIState = true;
+                    ui.enable(hit.collider.gameObject);
                 }
             }
         }
@@ -57,39 +56,16 @@ public class DetectWalls : MonoBehaviour {
             //Pressed Tab-Button
             if (Input.GetKeyDown(KeyCode.Tab))
             {
-                disableCursor();
-                inUIState = false;
-                ui.disable();
+                disableUI();
             }
         }
       
     }
 
-    //Will be called if User clicked on a Wall
-    void enableUI(GameObject wall)
+    public void disableUI()
     {
-        inUIState = true;
-        ui.enable(wall);
-
-        enableCursor();        
-    }
-
-
-
-    private void disableCursor()
-    {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
-        GetComponent<FirstPersonController>().lockRotation = false;
-    }
-
-    private void enableCursor()
-    {
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-
-        GetComponent<FirstPersonController>().lockRotation = true;
+        inUIState = false;
+        ui.disable();
     }
 
 }
