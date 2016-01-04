@@ -42,7 +42,7 @@ public class DetectWalls : MonoBehaviour {
                     Debug.Log("Hit GameObject: " + hit.collider.gameObject + " Distance: " + distance);
 
                     //Return if not hit a Wall
-                    if (hit.transform.tag != "Wall")
+                    if (hit.transform.tag != "Wall" && hit.transform.tag != "Tiled")
                            return;
 
                     //Enable UI     

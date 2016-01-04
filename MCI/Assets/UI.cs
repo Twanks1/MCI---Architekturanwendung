@@ -4,18 +4,16 @@ using UnityStandardAssets.Characters.FirstPerson;
 
 public class UI : MonoBehaviour {
 
-    public Canvas canvas;
-    public Material[] materials;
+    public  EnableSpecificUI ui_script;
     
-    private Material wallMaterialWhenSelected;
-    private GameObject selectedWall;
+    private Material materialWhenSelected;
+    private GameObject selectedObj;
 
     private Stack changes;                          //Allows Undo
     private bool changedColorOrMat = false;
     
     void Start()
     {
-        canvas.enabled = false;                     //Disable UI at start
         changes = new Stack();                      //Stack for Undo steps
         disableCursor();                            //Disable Mouse-Cursor
     }
@@ -23,47 +21,43 @@ public class UI : MonoBehaviour {
     //Will be called if clicked on a valid Wall
     public void enable(GameObject selectedObject)
     {
-        selectedWall = selectedObject;
-        Material mat = selectedWall.GetComponent<MeshRenderer>().material;
-        wallMaterialWhenSelected = mat;
+        selectedObj = selectedObject;
+        Material mat = selectedObj.GetComponent<MeshRenderer>().material;
+        materialWhenSelected = mat;
 
         mat.color = Color.yellow;               //"Highlight the selected Object"
-
         changes.Clear();                        //Empty the Stack
-
         changedColorOrMat = false;
-        canvas.enabled = true;
+
+        ui_script.enableUI(selectedObj.tag);
 
         enableCursor();
     }
 
-    //Will be called if "Tab" pressed
+    //Will be called if "Tab" pressed or "Accept" button clicked
     public void disable()
     {
         if (!changedColorOrMat)
-            selectedWall.GetComponent<MeshRenderer>().material.color = Color.white;   //Reset the "Highlight" Wall-Color
-
-        canvas.enabled = false;                 //Disable Canvas-Object
+            selectedObj.GetComponent<MeshRenderer>().material.color = Color.white;   //Reset the "Highlight" Wall-Color
+        ui_script.disableUI();
         disableCursor();                        //Disable Mouse-Cursor
     }
-
-
-    //Change Material with an given Index
-    //To add a new Material, create it and add it in the Editor of the "First Person Controller" in the materials-Array from the UI-Script
-    public void changeMaterial(int index)
+    
+    //Change Material from the selected object
+    public void changeMaterial(Material mat)
     {
-        if (selectedWall.GetComponent<MeshRenderer>().sharedMaterial == materials[index])
+        if (selectedObj.GetComponent<MeshRenderer>().sharedMaterial == mat)
             return;     //User clicked on the same Button twice
         changedColorOrMat = true;
-        changes.Push(new Change(selectedWall.GetComponent<MeshRenderer>().material));
-        selectedWall.GetComponent<MeshRenderer>().material = materials[index];
+        changes.Push(new Change(selectedObj.GetComponent<MeshRenderer>().material));
+        selectedObj.GetComponent<MeshRenderer>().material = mat;
     }
 
-    //Reset Wall to state where it was when clicked on it
-    public void resetWall()
+    //Reset object to state where it was when clicked on it
+    public void reset()
     {
         changedColorOrMat = false;
-        selectedWall.GetComponent<MeshRenderer>().material = wallMaterialWhenSelected;
+        selectedObj.GetComponent<MeshRenderer>().material = materialWhenSelected;
     }
 
     //Undo the last change
@@ -72,9 +66,9 @@ public class UI : MonoBehaviour {
         if (changes.Count == 0)
             return;                 //Stack is Empty
         Change lastChange = (Change) changes.Pop();        
-        selectedWall.GetComponent<MeshRenderer>().material = lastChange.material;
+        selectedObj.GetComponent<MeshRenderer>().material = lastChange.material;
 
-        if (selectedWall.GetComponent<MeshRenderer>().material == wallMaterialWhenSelected)
+        if (selectedObj.GetComponent<MeshRenderer>().material == materialWhenSelected)
             changedColorOrMat = false;
     }
 
