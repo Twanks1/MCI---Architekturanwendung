@@ -22,7 +22,7 @@ public class DetectWalls : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-       
+        
         if (!inUIState)
         {
             //Left-Mouse Button Click

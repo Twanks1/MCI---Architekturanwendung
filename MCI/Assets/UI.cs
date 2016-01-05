@@ -4,10 +4,21 @@ using UnityEngine.UI;
 using UnityStandardAssets.Characters.FirstPerson;
 
 public class UI : MonoBehaviour {
+
+    enum Mode
+    {
+        TypÄndern,
+        ObjekteHinzufügen
+    }
+
     //The scroll views from the individual ui's
     public GameObject ui_wall;
     public GameObject ui_tiled;
     public GameObject ui_objects;
+
+    public GameObject objektHinzufügen_button;
+
+    public GameObject undo_button;
 
     public GameObject player;                               //Player for acces to the "Change Type" - script
 
@@ -20,11 +31,12 @@ public class UI : MonoBehaviour {
 
     void Start()
     {
-        canvas = GetComponent<Canvas>();
+        canvas = GetComponent<Canvas>();        
         canvas.enabled = false;
         ui_wall.SetActive(false);
         ui_tiled.SetActive(false);
         ui_objects.SetActive(false);
+        setUndoButtonActive(false);
         disableCursor();                           
     }
 
@@ -37,12 +49,13 @@ public class UI : MonoBehaviour {
         {
             case "Wall":
                 ui_wall.SetActive(true);
+                objektHinzufügen_button.GetComponent<Button>().interactable = true;
                 break;
             case "Tiled":
                 ui_tiled.SetActive(true);
+                objektHinzufügen_button.GetComponent<Button>().interactable = false;
                 break;
         }
-
         changeMode(Mode.TypÄndern);
         player.GetComponent<ObjectManipulation>().init(selectedObject);
         enableCursor();
@@ -52,16 +65,10 @@ public class UI : MonoBehaviour {
     public void disableUI()
     {
         canvas.enabled = false;
-        ui_wall.SetActive(false);
-        ui_tiled.SetActive(false);
+        disableScrollView();
+        setUndoButtonActive(false);
         player.GetComponent<ObjectManipulation>().shutdown();
         disableCursor();
-    }
-
-    enum Mode
-    {
-        TypÄndern,
-        ObjekteHinzufügen
     }
 
     //Called if Menu Button "Typ ändern" was clicked
@@ -77,7 +84,17 @@ public class UI : MonoBehaviour {
         changeMode(Mode.ObjekteHinzufügen);
         changeButtonColor(button, buttonColorWhenInMode);
     }
-    
+
+
+    public void disableScrollView()
+    {
+        ui_tiled.SetActive(false);
+        ui_objects.SetActive(false);
+        ui_wall.SetActive(false);
+    }
+
+   
+
     //Change the Mode (changes button color and enables/disables specific UI)
     private void changeMode(Mode mode)
     {
@@ -93,16 +110,21 @@ public class UI : MonoBehaviour {
                 buttons[i].GetComponent<Image>().color = Color.white;
             }
         }
+        enableScrollView();
+    }
+
+    public void enableScrollView()
+    {
         switch (currentMode)
         {
             case Mode.TypÄndern:
-                if(currentTag == "Wall")
+                if (currentTag == "Wall")
                 {
                     ui_tiled.SetActive(false);
                     ui_objects.SetActive(false);
                     ui_wall.SetActive(true);
                 }
-                else if(currentTag == "Tiled")
+                else if (currentTag == "Tiled")
                 {
                     ui_objects.SetActive(false);
                     ui_wall.SetActive(false);
@@ -117,6 +139,11 @@ public class UI : MonoBehaviour {
         }
     }
 
+
+    public void setUndoButtonActive(bool b)
+    {
+        undo_button.GetComponent<Button>().interactable = b;
+    }
 
     private void changeButtonColor(GameObject button, Color col)
     {

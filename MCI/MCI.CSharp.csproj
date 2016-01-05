@@ -70,6 +70,7 @@
   <ItemGroup>
     <Compile Include="Assets\DetectWalls.cs" />
     <Compile Include="Assets\ObjectManipulation.cs" />
+    <Compile Include="Assets\TemplateDecalScript.cs" />
     <Compile Include="Assets\UI.cs" />
   </ItemGroup>
   <ItemGroup>
