@@ -1,105 +1,143 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 using UnityStandardAssets.Characters.FirstPerson;
 
 public class UI : MonoBehaviour {
+    //The scroll views from the individual ui's
+    public GameObject ui_wall;
+    public GameObject ui_tiled;
+    public GameObject ui_objects;
 
-    public  EnableSpecificUI ui_script;
-    
-    private Material materialWhenSelected;
-    private GameObject selectedObj;
+    public GameObject player;                               //Player for acces to the "Change Type" - script
 
-    private Stack changes;                          //Allows Undo
-    private bool changedColorOrMat = false;
-    
+    public GameObject[] buttons;                            //All Buttons in the Menu
+
+    private Canvas canvas;
+    private Mode currentMode = Mode.TypÄndern;
+    private Color buttonColorWhenInMode = Color.cyan;
+    private string currentTag = "";                          //The tag from the current selected Object
+
     void Start()
     {
-        changes = new Stack();                      //Stack for Undo steps
-        disableCursor();                            //Disable Mouse-Cursor
+        canvas = GetComponent<Canvas>();
+        canvas.enabled = false;
+        ui_wall.SetActive(false);
+        ui_tiled.SetActive(false);
+        ui_objects.SetActive(false);
+        disableCursor();                           
     }
 
-    //Will be called if clicked on a valid Wall
-    public void enable(GameObject selectedObject)
+    //Enable the whole UI based on which Object were selected
+    public void enableUI(GameObject selectedObject)
     {
-        selectedObj = selectedObject;
-        Material mat = selectedObj.GetComponent<MeshRenderer>().material;
-        materialWhenSelected = mat;
+        canvas.enabled = true;
+        currentTag = selectedObject.tag;
+        switch (currentTag)
+        {
+            case "Wall":
+                ui_wall.SetActive(true);
+                break;
+            case "Tiled":
+                ui_tiled.SetActive(true);
+                break;
+        }
 
-        mat.color = Color.yellow;               //"Highlight the selected Object"
-        changes.Clear();                        //Empty the Stack
-        changedColorOrMat = false;
-
-        ui_script.enableUI(selectedObj.tag);
-
+        changeMode(Mode.TypÄndern);
+        player.GetComponent<ObjectManipulation>().init(selectedObject);
         enableCursor();
     }
 
-    //Will be called if "Tab" pressed or "Accept" button clicked
-    public void disable()
+    //Disable the whole UI
+    public void disableUI()
     {
-        if (!changedColorOrMat)
-            selectedObj.GetComponent<MeshRenderer>().material.color = Color.white;   //Reset the "Highlight" Wall-Color
-        ui_script.disableUI();
-        disableCursor();                        //Disable Mouse-Cursor
+        canvas.enabled = false;
+        ui_wall.SetActive(false);
+        ui_tiled.SetActive(false);
+        player.GetComponent<ObjectManipulation>().shutdown();
+        disableCursor();
+    }
+
+    enum Mode
+    {
+        TypÄndern,
+        ObjekteHinzufügen
+    }
+
+    //Called if Menu Button "Typ ändern" was clicked
+    public void onClickTypÄndern(GameObject button)
+    {
+        changeMode(Mode.TypÄndern);
+        changeButtonColor(button, buttonColorWhenInMode);
+    }
+
+    //Called if Menu Button "Objekt Hinzufügen" was clicked
+    public void onClickObjekteHinzufügen(GameObject button)
+    {
+        changeMode(Mode.ObjekteHinzufügen);
+        changeButtonColor(button, buttonColorWhenInMode);
     }
     
-    //Change Material from the selected object
-    public void changeMaterial(Material mat)
+    //Change the Mode (changes button color and enables/disables specific UI)
+    private void changeMode(Mode mode)
     {
-        if (selectedObj.GetComponent<MeshRenderer>().sharedMaterial == mat)
-            return;     //User clicked on the same Button twice
-        changedColorOrMat = true;
-        changes.Push(new Change(selectedObj.GetComponent<MeshRenderer>().material));
-        selectedObj.GetComponent<MeshRenderer>().material = mat;
+        currentMode = mode;
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            if (i == (int)currentMode)
+            {
+                buttons[i].GetComponent<Image>().color = buttonColorWhenInMode;
+            }
+            else
+            {
+                buttons[i].GetComponent<Image>().color = Color.white;
+            }
+        }
+        switch (currentMode)
+        {
+            case Mode.TypÄndern:
+                if(currentTag == "Wall")
+                {
+                    ui_tiled.SetActive(false);
+                    ui_objects.SetActive(false);
+                    ui_wall.SetActive(true);
+                }
+                else if(currentTag == "Tiled")
+                {
+                    ui_objects.SetActive(false);
+                    ui_wall.SetActive(false);
+                    ui_tiled.SetActive(true);
+                }
+                break;
+            case Mode.ObjekteHinzufügen:
+                ui_wall.SetActive(false);
+                ui_tiled.SetActive(false);
+                ui_objects.SetActive(true);
+                break;
+        }
     }
 
-    //Reset object to state where it was when clicked on it
-    public void reset()
+
+    private void changeButtonColor(GameObject button, Color col)
     {
-        changedColorOrMat = false;
-        selectedObj.GetComponent<MeshRenderer>().material = materialWhenSelected;
+        button.GetComponent<Image>().color = col;
     }
 
-    //Undo the last change
-    public void undo()
-    {
-        if (changes.Count == 0)
-            return;                 //Stack is Empty
-        Change lastChange = (Change) changes.Pop();        
-        selectedObj.GetComponent<MeshRenderer>().material = lastChange.material;
-
-        if (selectedObj.GetComponent<MeshRenderer>().material == materialWhenSelected)
-            changedColorOrMat = false;
-    }
-
-
-
-
+    //Disables cursor and lock the rotation
     private void disableCursor()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        GetComponent<FirstPersonController>().lockRotation = false;
+        player.GetComponent<FirstPersonController>().lockRotation = false;
     }
 
+    //Enables cursor and rotation with mouse
     private void enableCursor()
     {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        GetComponent<FirstPersonController>().lockRotation = true;
-    }
-
-
-    //Represents one change 
-    private class Change
-    {
-        public Material material;
-
-        public Change(Material mat)
-        {
-            material = mat;
-        }
+        player.GetComponent<FirstPersonController>().lockRotation = true;
     }
 }

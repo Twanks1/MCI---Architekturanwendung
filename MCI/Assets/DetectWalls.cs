@@ -8,17 +8,16 @@ public class DetectWalls : MonoBehaviour {
     public bool drawDebugRay = true;
     public float debugRayLifetime = 5;
 
-    private Camera cam;
+    public UI ui;
 
+    private Camera cam;
     private bool inUIState = false;
 
     //The UI-Script
-    private UI ui;
 
 	// Use this for initialization
 	void Start () {
         cam = GetComponentInChildren<Camera>();
-        ui = gameObject.GetComponent<UI>();
     }
 	
 	// Update is called once per frame
@@ -47,7 +46,7 @@ public class DetectWalls : MonoBehaviour {
 
                     //Enable UI     
                     inUIState = true;
-                    ui.enable(hit.collider.gameObject);
+                    ui.enableUI(hit.collider.gameObject);
                 }
             }
         }
@@ -65,7 +64,7 @@ public class DetectWalls : MonoBehaviour {
     public void disableUI()
     {
         inUIState = false;
-        ui.disable();
+        ui.disableUI();
     }
 
 }
