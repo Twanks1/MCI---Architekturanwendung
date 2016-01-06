@@ -19,6 +19,8 @@ public class UI : MonoBehaviour {
     public GameObject objektHinzufügen_button;
 
     public GameObject undo_button;
+    public GameObject papierkorb_button;
+    public GameObject reset_button;
 
     public GameObject player;                               //Player for acces to the "Change Type" - script
 
@@ -37,6 +39,7 @@ public class UI : MonoBehaviour {
         ui_tiled.SetActive(false);
         ui_objects.SetActive(false);
         setUndoButtonActive(false);
+        setPapierkorbButtonActive(false);
         disableCursor();                           
     }
 
@@ -143,6 +146,16 @@ public class UI : MonoBehaviour {
     public void setUndoButtonActive(bool b)
     {
         undo_button.GetComponent<Button>().interactable = b;
+    }
+
+    public void setPapierkorbButtonActive(bool b)
+    {
+        papierkorb_button.SetActive(b);
+    }
+
+    public void setResetButtonActive(bool b)
+    {
+        reset_button.GetComponent<Button>().interactable = b;
     }
 
     private void changeButtonColor(GameObject button, Color col)

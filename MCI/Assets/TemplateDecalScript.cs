@@ -74,14 +74,15 @@ public class TemplateDecalScript : MonoBehaviour {
             {
                 attachedToMouse = false;
                 ui_script.enableScrollView();
-            }
-
-            if(Input.GetKeyDown(KeyCode.Mouse1))
-            {
-                Debug.Log("TEST");
-                Destroy(this.gameObject);
-                ui_script.enableScrollView();
-            }
+                ui_script.setPapierkorbButtonActive(false);
+            }            
         }
+    }
+
+    public void DestroyObject()
+    {
+        Destroy(this.gameObject);
+        ui_script.enableScrollView();
+        parentWall.GetComponent<Wall>().removeObject(this.gameObject);
     }
 }

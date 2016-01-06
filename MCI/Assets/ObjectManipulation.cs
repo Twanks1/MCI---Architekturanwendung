@@ -9,19 +9,18 @@ public class ObjectManipulation : MonoBehaviour {
 
     public GameObject templateDecalPlane;
     public float defaultObjectScale = 0.1f;
-    public Material defaultMaterial;
         
     private Material materialWhenSelected;
     private GameObject selectedObj;
-    private List<GameObject> objects;
 
     private Stack changes;                          //Allows Undo
     private bool changedColorOrMat = false;
+
+    private GameObject lastObjectInstance;
     
     void Start()
     {
         changes = new Stack();                      //Stack for Undo steps  
-        objects = new List<GameObject>();  
     }
 
     //Will be called if clicked on a valid object
@@ -33,7 +32,12 @@ public class ObjectManipulation : MonoBehaviour {
 
         mat.color = Color.yellow;               //"Highlight the selected Object"
         changes.Clear();                        //Empty the Stack
-        changedColorOrMat = false;        
+        changedColorOrMat = false;
+
+        if (!selectedObj.GetComponent<Wall>().isInDefaultState())
+            ui_script.setResetButtonActive(true);
+        else
+            ui_script.setResetButtonActive(false);
     }
 
     //Will be called if "Tab" pressed or "Accept" button clicked
@@ -46,14 +50,15 @@ public class ObjectManipulation : MonoBehaviour {
     //Change Material from the selected object
     public void changeMaterial(Material mat)
     {
-        if (selectedObj.GetComponent<MeshRenderer>().sharedMaterial == mat)
-            return;     //User clicked on the same Button twice
+        if (selectedObj.GetComponent<MeshRenderer>().sharedMaterial.mainTexture == mat.mainTexture)
+            return;     //Object has already this Material, so return
         changedColorOrMat = true;
-        changes.Push(new Change(selectedObj.GetComponent<MeshRenderer>().material, selectedObj));
+        changes.Push(new Change(selectedObj.GetComponent<MeshRenderer>().material, selectedObj, ChangeType.changedMaterial));
 
-        selectedObj.GetComponent<MeshRenderer>().material = mat;
+        selectedObj.GetComponent<Wall>().changeMaterial(mat);
 
         ui_script.setUndoButtonActive(true);
+        ui_script.setResetButtonActive(true);
     }
 
     //add the given object to the wall
@@ -72,48 +77,62 @@ public class ObjectManipulation : MonoBehaviour {
         GameObject instance = (GameObject)Instantiate(templateDecalPlane, transform.position, Quaternion.Euler(rot));
         instance.GetComponent<TemplateDecalScript>().init(selectedObj, aspectRatio, ui_script);
 
-        changes.Push(new Change(instance, selectedObj));
-        objects.Add(instance);
+        //Set lastObjectInstance to this Object
+        lastObjectInstance = instance;
 
+        //Add Change to Stack
+        changes.Push(new Change(instance, selectedObj, ChangeType.attachedObject));
+
+        //Add Object To Wall
+        selectedObj.GetComponent<Wall>().addObject(instance);
+
+        //Disable Scroll-View and enable Undo-Button
         ui_script.disableScrollView();
         ui_script.setUndoButtonActive(true);
+        ui_script.setPapierkorbButtonActive(true);
+        ui_script.setResetButtonActive(true);          
     }
 
-    //Remove everything from wall
+    //Remove everything from the selected Object (pillar, floor, wall etc.)
     public void reset()
     {
         changedColorOrMat = false;
-        selectedObj.GetComponent<MeshRenderer>().material = defaultMaterial;
-        selectedObj.GetComponent<MeshRenderer>().material.color = Color.yellow;
-        for (int i = objects.Count - 1; i >= 0; i--)
-        {
-            if(objects[i].GetComponent<TemplateDecalScript>().parentWall == selectedObj)
-            {
-                GameObject objectToDestroy = objects[i];
-                objects.Remove(objectToDestroy);
-                Destroy(objectToDestroy);
-            }
-        }
-        changes.Clear();
-        ui_script.setUndoButtonActive(false);
+        selectedObj.GetComponent<Wall>().reset();
+
+        changes.Push(new Change(selectedObj, ChangeType.resetObject));
+
+        //changes.Clear();                                //Clear Stack
+        ui_script.setUndoButtonActive(true);           //Disable Undo-Button
+        ui_script.setResetButtonActive(false);          //Disable Reset-Button
     }
 
     //Undo the last change
     public void undo()
     {
         if (changes.Count == 0)
-            return;                 //Stack is Empty
+            return;             //Stack is Empty
         Change lastChange = (Change) changes.Pop();
-        if (lastChange.gameObject != null)
-            objects.Remove(lastChange.gameObject);
         lastChange.undo();
-
-        if (changes.Count == 0)
+        
+        if (changes.Count == 0 || lastChange.changeType == ChangeType.resetObject)
+        {
             ui_script.setUndoButtonActive(false);
+            changes.Clear();
+        }
+
+        if (!selectedObj.GetComponent<Wall>().isInDefaultState())
+            ui_script.setResetButtonActive(true);
 
         if (selectedObj.GetComponent<MeshRenderer>().material == materialWhenSelected)
             changedColorOrMat = false;
     }
+
+    public void deleteCurrentDraggedObject()
+    {
+        lastObjectInstance.GetComponent<TemplateDecalScript>().DestroyObject();
+        ui_script.setPapierkorbButtonActive(false);
+        changes.Pop();
+    }    
 
 
     //Represents one change 
@@ -122,47 +141,51 @@ public class ObjectManipulation : MonoBehaviour {
         public Material material;       //The material
         public GameObject gameObject;   //The object attached to the wall 
         public GameObject selectedObj;  //the selected object (e.g. wall)
+        public ChangeType changeType;
 
-        public Change(Material mat, GameObject selectedObject)
+        public Change(Material mat, GameObject selectedObject, ChangeType changeType)
         {
             material = mat;
             selectedObj = selectedObject;
+            this.changeType = changeType;
         }
 
-        public Change(GameObject go, GameObject selectedObject)
+        public Change(GameObject go, GameObject selectedObject, ChangeType changeType)
         {
             gameObject = go;
             selectedObj = selectedObject;
+            this.changeType = changeType;
+        }
+
+        public Change(GameObject selectedObject, ChangeType changeType)
+        {
+            selectedObj = selectedObject;
+            this.changeType = changeType;
         }
 
         public void undo()
         {
-            if (gameObject == null)
+            if (changeType == ChangeType.changedMaterial)
             {
                 selectedObj.GetComponent<MeshRenderer>().material = material;
             }
-            else
+            else if(changeType == ChangeType.attachedObject)
             {
-                Destroy(gameObject);
+                selectedObj.GetComponent<Wall>().removeObject(gameObject);
+            }
+            else if(changeType == ChangeType.resetObject)
+            {
+                selectedObj.GetComponent<Wall>().restoreLastState();
             }
         }
     }
 
-    /*
-    private class Wall
+    enum ChangeType
     {
-        public Material material;
-        public List<GameObject> objects;
+        changedMaterial,
+        attachedObject,
+        resetObject
+    }
 
-        public Wall(Material mat)
-        {
-            material = mat;
-            objects = new List<GameObject>();
-        }
-
-        public void addObject(GameObject obj)
-        {
-            objects.Add(obj);
-        }
-    }*/
+    
 }
