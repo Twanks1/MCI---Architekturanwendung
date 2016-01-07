@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityStandardAssets.Characters.FirstPerson;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class ObjectManipulation : MonoBehaviour {
 
@@ -30,14 +31,16 @@ public class ObjectManipulation : MonoBehaviour {
         Material mat = selectedObj.GetComponent<MeshRenderer>().material;
         materialWhenSelected = mat;
 
-        mat.color = Color.yellow;               //"Highlight the selected Object"
         changes.Clear();                        //Empty the Stack
         changedColorOrMat = false;
 
         if (!selectedObj.GetComponent<Wall>().isInDefaultState())
             ui_script.setResetButtonActive(true);
         else
+        {
             ui_script.setResetButtonActive(false);
+            mat.color = Color.yellow;               //"Highlight the selected Object"
+        }
     }
 
     //Will be called if "Tab" pressed or "Accept" button clicked
@@ -61,6 +64,23 @@ public class ObjectManipulation : MonoBehaviour {
         ui_script.setResetButtonActive(true);
     }
 
+
+    //Change color for this object
+    public void changeColor(Image img)
+    {
+        Color col = img.color;
+        Material mat = selectedObj.GetComponent<MeshRenderer>().material;
+        if (mat.color == col)
+            return;     //Object has already this color, so return
+        changedColorOrMat = true;
+        changes.Push(new Change(mat, selectedObj, ChangeType.changedColor));
+
+        selectedObj.GetComponent<Wall>().changeColor(col);
+
+        ui_script.setUndoButtonActive(true);
+        ui_script.setResetButtonActive(true);
+    }
+    
     //add the given object to the wall
     public void addObject(Material mat)
     {
@@ -88,7 +108,6 @@ public class ObjectManipulation : MonoBehaviour {
 
         //Disable Scroll-View and enable Undo-Button
         ui_script.disableScrollView();
-        ui_script.setUndoButtonActive(true);
         ui_script.setPapierkorbButtonActive(true);
         ui_script.setResetButtonActive(true);          
     }
@@ -100,8 +119,7 @@ public class ObjectManipulation : MonoBehaviour {
         selectedObj.GetComponent<Wall>().reset();
 
         changes.Push(new Change(selectedObj, ChangeType.resetObject));
-
-        //changes.Clear();                                //Clear Stack
+        
         ui_script.setUndoButtonActive(true);           //Disable Undo-Button
         ui_script.setResetButtonActive(false);          //Disable Reset-Button
     }
@@ -121,18 +139,19 @@ public class ObjectManipulation : MonoBehaviour {
         }
 
         if (!selectedObj.GetComponent<Wall>().isInDefaultState())
+        {
             ui_script.setResetButtonActive(true);
-
-        if (selectedObj.GetComponent<MeshRenderer>().material == materialWhenSelected)
-            changedColorOrMat = false;
+            changedColorOrMat = true;
+        }
+            
     }
 
     public void deleteCurrentDraggedObject()
     {
         lastObjectInstance.GetComponent<TemplateDecalScript>().DestroyObject();
         ui_script.setPapierkorbButtonActive(false);
-        changes.Pop();
-    }    
+        changes.Pop();           
+    }
 
 
     //Represents one change 
@@ -141,11 +160,13 @@ public class ObjectManipulation : MonoBehaviour {
         public Material material;       //The material
         public GameObject gameObject;   //The object attached to the wall 
         public GameObject selectedObj;  //the selected object (e.g. wall)
+        public Color color;
         public ChangeType changeType;
 
         public Change(Material mat, GameObject selectedObject, ChangeType changeType)
         {
             material = mat;
+            color = mat.color;
             selectedObj = selectedObject;
             this.changeType = changeType;
         }
@@ -167,7 +188,7 @@ public class ObjectManipulation : MonoBehaviour {
         {
             if (changeType == ChangeType.changedMaterial)
             {
-                selectedObj.GetComponent<MeshRenderer>().material = material;
+                selectedObj.GetComponent<Wall>().changeMaterial(this.material);
             }
             else if(changeType == ChangeType.attachedObject)
             {
@@ -177,6 +198,11 @@ public class ObjectManipulation : MonoBehaviour {
             {
                 selectedObj.GetComponent<Wall>().restoreLastState();
             }
+            else if(changeType == ChangeType.changedColor)
+            {
+                selectedObj.GetComponent<Wall>().changeMaterial(this.material);
+                selectedObj.GetComponent<Wall>().changeColor(color);
+            }
         }
     }
 
@@ -184,7 +210,8 @@ public class ObjectManipulation : MonoBehaviour {
     {
         changedMaterial,
         attachedObject,
-        resetObject
+        resetObject,
+        changedColor
     }
 
     

@@ -24,6 +24,11 @@ public class Wall : MonoBehaviour {
         meshRenderer.material = mat;
     }
 
+    public void changeColor(Color col)
+    {
+        meshRenderer.material.color = col;
+    }
+
     public void addObject(GameObject obj)
     {
         objects.Add(obj);
@@ -52,7 +57,7 @@ public class Wall : MonoBehaviour {
     
     public bool isInDefaultState()
     {
-        if (meshRenderer.sharedMaterial.mainTexture == defaultMaterial.mainTexture && objects.Count == 0)
+        if (meshRenderer.sharedMaterial.mainTexture == defaultMaterial.mainTexture && meshRenderer.material.color == defaultMaterial.color && objects.Count == 0)
             return true;
 
         return false;

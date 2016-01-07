@@ -8,13 +8,16 @@ public class UI : MonoBehaviour {
     enum Mode
     {
         TypÄndern,
-        ObjekteHinzufügen
+        ObjekteHinzufügen,
+        FarbeÄndern
     }
 
     //The scroll views from the individual ui's
-    public GameObject ui_wall;
-    public GameObject ui_tiled;
-    public GameObject ui_objects;
+    public GameObject[] ui_scrollviews;
+    private const int ui_wall = 0;
+    private const int ui_tiled = 1;
+    private const int ui_objects = 2;
+    private const int ui_color = 3;
 
     public GameObject objektHinzufügen_button;
 
@@ -35,9 +38,7 @@ public class UI : MonoBehaviour {
     {
         canvas = GetComponent<Canvas>();        
         canvas.enabled = false;
-        ui_wall.SetActive(false);
-        ui_tiled.SetActive(false);
-        ui_objects.SetActive(false);
+        disableScrollView();
         setUndoButtonActive(false);
         setPapierkorbButtonActive(false);
         disableCursor();                           
@@ -51,11 +52,11 @@ public class UI : MonoBehaviour {
         switch (currentTag)
         {
             case "Wall":
-                ui_wall.SetActive(true);
+                ui_scrollviews[ui_wall].SetActive(true);
                 objektHinzufügen_button.GetComponent<Button>().interactable = true;
                 break;
             case "Tiled":
-                ui_tiled.SetActive(true);
+                ui_scrollviews[ui_tiled].SetActive(true);
                 objektHinzufügen_button.GetComponent<Button>().interactable = false;
                 break;
         }
@@ -88,15 +89,18 @@ public class UI : MonoBehaviour {
         changeButtonColor(button, buttonColorWhenInMode);
     }
 
+    public void onClickFarbeÄndern(GameObject button)
+    {
+        changeMode(Mode.FarbeÄndern);
+        changeButtonColor(button, buttonColorWhenInMode);
+    }
+
 
     public void disableScrollView()
     {
-        ui_tiled.SetActive(false);
-        ui_objects.SetActive(false);
-        ui_wall.SetActive(false);
-    }
-
-   
+        foreach (GameObject ui in ui_scrollviews)
+            ui.SetActive(false);
+    }   
 
     //Change the Mode (changes button color and enables/disables specific UI)
     private void changeMode(Mode mode)
@@ -123,21 +127,22 @@ public class UI : MonoBehaviour {
             case Mode.TypÄndern:
                 if (currentTag == "Wall")
                 {
-                    ui_tiled.SetActive(false);
-                    ui_objects.SetActive(false);
-                    ui_wall.SetActive(true);
+                    disableScrollView();
+                    ui_scrollviews[ui_wall].SetActive(true);
                 }
                 else if (currentTag == "Tiled")
                 {
-                    ui_objects.SetActive(false);
-                    ui_wall.SetActive(false);
-                    ui_tiled.SetActive(true);
+                    disableScrollView();
+                    ui_scrollviews[ui_tiled].SetActive(true);
                 }
                 break;
             case Mode.ObjekteHinzufügen:
-                ui_wall.SetActive(false);
-                ui_tiled.SetActive(false);
-                ui_objects.SetActive(true);
+                disableScrollView();
+                ui_scrollviews[ui_objects].SetActive(true);
+                break;
+            case Mode.FarbeÄndern:
+                disableScrollView();
+                ui_scrollviews[ui_color].SetActive(true);
                 break;
         }
     }

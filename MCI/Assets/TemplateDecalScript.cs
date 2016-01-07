@@ -75,6 +75,7 @@ public class TemplateDecalScript : MonoBehaviour {
                 attachedToMouse = false;
                 ui_script.enableScrollView();
                 ui_script.setPapierkorbButtonActive(false);
+                ui_script.setUndoButtonActive(true);
             }            
         }
     }
