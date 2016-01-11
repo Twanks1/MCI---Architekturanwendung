@@ -17,8 +17,10 @@ public class TemplateDecalScript : MonoBehaviour {
     private UI ui_script;
     private int objectID;
 
+
     private float distanceFromWall = 0.0001f;
     private float aspectRatio;
+    private bool rotateMode = false;
 
     //Called from "ObjectManipulation.cs"
     public void init(GameObject wall, float aspectRatio, UI ui_script)
@@ -30,7 +32,7 @@ public class TemplateDecalScript : MonoBehaviour {
         objectID = numObject++;
         this.ui_script = ui_script;
     }
-	
+    
 	// Update is called once per frame
 	void Update () {
 
@@ -42,15 +44,42 @@ public class TemplateDecalScript : MonoBehaviour {
 
             if (Physics.Raycast(ray, out hit, maxDistance))
             {
-
                 //Return if not the ParelWall was hit
                 if (hit.transform.gameObject != parentWall)
                     return;
 
-                Vector3 diffVec = (ray.origin - hit.point).normalized;
-                Vector3 scaleVec = new Vector3(distanceFromWall + objectID*distanceFromWall, distanceFromWall + objectID * distanceFromWall, distanceFromWall + objectID * distanceFromWall);
-                diffVec.Scale(scaleVec);
-                transform.position = hit.point + diffVec;       //Set the position
+                //Rotate Object
+                if (rotateMode)
+                {
+                    Vector3 objectOriginToMousePos = (hit.point - transform.position).normalized;
+                    Vector3 wallright = parentWall.transform.right;
+                    float angle = Vector3.Angle(wallright, objectOriginToMousePos);
+                    if (objectOriginToMousePos.y < 0)
+                        angle = 360 - angle;
+
+                    Vector3 rotationAxis = parentWall.transform.forward;
+
+                    transform.rotation = Quaternion.AngleAxis(angle, rotationAxis);
+                    transform.Rotate(parentWall.transform.right, 90);
+                   
+
+                    if (Input.GetKeyDown(KeyCode.Mouse1))
+                    {
+                        rotateMode = false;
+                    }
+                }
+                else //Move Object
+                {
+                    Vector3 diffVec = (ray.origin - hit.point).normalized;
+                    Vector3 scaleVec = new Vector3(distanceFromWall + objectID * distanceFromWall, distanceFromWall + objectID * distanceFromWall, distanceFromWall + objectID * distanceFromWall);
+                    diffVec.Scale(scaleVec);
+                    transform.position = hit.point + diffVec;       //Set the position
+
+                    if (Input.GetKeyDown(KeyCode.Mouse1))
+                    {
+                        rotateMode = true;
+                    }
+                }              
             }
 
             //Scale Objects with Mouse-Wheel

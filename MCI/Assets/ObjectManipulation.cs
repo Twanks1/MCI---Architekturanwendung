@@ -11,7 +11,6 @@ public class ObjectManipulation : MonoBehaviour {
     public GameObject templateDecalPlane;
     public float defaultObjectScale = 0.1f;
         
-    private Material materialWhenSelected;
     private GameObject selectedObj;
 
     private Stack changes;                          //Allows Undo
@@ -29,7 +28,6 @@ public class ObjectManipulation : MonoBehaviour {
     {
         selectedObj = selectedObject;
         Material mat = selectedObj.GetComponent<MeshRenderer>().material;
-        materialWhenSelected = mat;
 
         changes.Clear();                        //Empty the Stack
         changedColorOrMat = false;
